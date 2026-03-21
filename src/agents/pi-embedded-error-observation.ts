@@ -6,7 +6,7 @@ import { stableStringify } from "./stable-stringify.js";
 
 const MAX_OBSERVATION_INPUT_CHARS = 64_000;
 const MAX_FINGERPRINT_MESSAGE_CHARS = 8_000;
-const RAW_ERROR_PREVIEW_MAX_CHARS = 400;
+export const RAW_ERROR_PREVIEW_MAX_CHARS = 400;
 const PROVIDER_ERROR_PREVIEW_MAX_CHARS = 200;
 const REQUEST_ID_RE = /\brequest[_ ]?id\b\s*[:=]\s*["'()]*([A-Za-z0-9._:-]+)/i;
 const OBSERVATION_EXTRA_REDACT_PATTERNS = [

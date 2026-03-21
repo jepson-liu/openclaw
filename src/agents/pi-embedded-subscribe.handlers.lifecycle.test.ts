@@ -92,8 +92,45 @@ describe("handleAgentEnd", () => {
       failoverReason: "overloaded",
       providerErrorType: "overloaded_error",
       consoleMessage:
-        "embedded run agent end: runId=run-1 isError=true model=claude-test provider=anthropic error=The AI service is temporarily overloaded. Please try again in a moment.",
+        'embedded run agent end: runId=run-1 isError=true model=claude-test provider=anthropic error=The AI service is temporarily overloaded. Please try again in a moment. rawError={"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}',
     });
+  });
+
+  it("includes redacted raw error in consoleMessage when friendly text hides the failure mode", () => {
+    const ctx = createContext({
+      role: "assistant",
+      stopReason: "error",
+      provider: "custom",
+      model: "claude-test",
+      errorMessage: "connect ECONNREFUSED 127.0.0.1:443",
+      content: [{ type: "text", text: "" }],
+    });
+
+    handleAgentEnd(ctx);
+
+    const meta = vi.mocked(ctx.log.warn).mock.calls[0]?.[1];
+    expect(meta?.error).toBe("LLM request timed out.");
+    expect(meta?.consoleMessage).toContain("error=LLM request timed out.");
+    expect(meta?.consoleMessage).toContain("rawError=connect ECONNREFUSED 127.0.0.1:443");
+  });
+
+  it("redacts sensitive fields when rawError is appended to consoleMessage", () => {
+    const ctx = createContext({
+      role: "assistant",
+      stopReason: "error",
+      provider: "custom",
+      model: "claude-test",
+      errorMessage: "timeout while connecting, x-api-key: sk-abcdefghijklmnopqrstuvwxyz123456",
+      content: [{ type: "text", text: "" }],
+    });
+
+    handleAgentEnd(ctx);
+
+    const meta = vi.mocked(ctx.log.warn).mock.calls[0]?.[1];
+    expect(meta?.error).toBe("LLM request timed out.");
+    expect(meta?.consoleMessage).toContain("error=LLM request timed out.");
+    expect(meta?.consoleMessage).toContain("rawError=timeout while connecting, x-api-key: ***");
+    expect(meta?.consoleMessage).not.toContain("sk-abcdefghijklmnopqrstuvwxyz123456");
   });
 
   it("sanitizes model and provider before writing consoleMessage", () => {
